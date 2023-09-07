@@ -52,14 +52,15 @@ def make_map(
         patchespickle_file,
         regions,
         data,
+        show_cbar=True,
         cm=None,
         outfile=None,
         ax=None,
         cax=None,
         extend_c="both",
         ignore_regions=None,
-        invalid_edgecolor="grey",
-        invalid_facecolor="white",
+        invalid_edgecolor="lightgrey",
+        invalid_facecolor="lightgrey",
         linewidth=0.1,
         norm_color=None,
         numbering=None,
@@ -74,7 +75,8 @@ def make_map(
         y_tick_labels=None,
         y_ticks_fontsize=8,
         lims=None,
-        only_usa=False
+        only_usa=False,
+        v_limits=None
 ):
     if ignore_regions is None:
         ignore_regions = ["ATA"]
@@ -91,6 +93,9 @@ def make_map(
     else:
         vmin = y_ticks[0]
         vmax = y_ticks[-1]
+
+    if v_limits is not None:
+        (vmin, vmax) = v_limits
 
     if norm_color is None:
         norm_color = Normalize(vmin=vmin, vmax=vmax)
@@ -149,7 +154,7 @@ def make_map(
 
     for r, d in zip(regions, data):
         if r in patches:
-            _, subregions, patch = patches[r]
+            level, subregions, patch = patches[r]
             if only_usa:
                 if r in 'US.AK':
                     patch.set_transform(patch.get_transform() + matplotlib.transforms.Affine2D().scale(
@@ -167,20 +172,24 @@ def make_map(
                 validpatches.append(EmptyPatch())
                 invpatches.append(patch)
                 print('NAN data for region {}'.format(r))
+            elif r in ignore_regions:
+                validpatches.append(EmptyPatch())
+                invpatches.append(patch)
+                print('Ignore region {}'.format(r))
             else:
                 validpatches.append(patch)
             regions_with_data.update(subregions)
         else:
             validpatches.append(EmptyPatch())
 
-    for r, (level, subregions, patch) in patches.items():
-        if not level and (r not in ignore_regions and subregions.isdisjoint(regions_with_data)):
-            invpatches.append(patch)
+    # for r, (level, subregions, patch) in patches.items():
+    #     if not level and (r not in ignore_regions and subregions.isdisjoint(regions_with_data)):
+    #         invpatches.append(patch)
 
     ax.add_collection(
         PatchCollection(
             invpatches,
-            #hatch="///",
+            hatch="///",
             facecolors=invalid_facecolor,
             edgecolors=invalid_edgecolor,
             linewidths=linewidth,
@@ -203,24 +212,25 @@ def make_map(
         )
     )
 
-    if cax is None:
-        divider = make_axes_locatable(ax)
-        cax = divider.append_axes("right", size="5%", pad=0.1)
-    cbar = matplotlib.colorbar.ColorbarBase(
-        cax,
-        cmap=cm,
-        norm=norm_color,
-        ticks=y_ticks,
-        orientation="vertical",
-        spacing="proportional",
-        extend=extend_c,
-    )
-    cbar.minorticks_on()
-    if y_tick_labels is not None:
-        cbar.ax.set_yticklabels(y_tick_labels)
-    if y_label is not None:
-        cax.set_ylabel(y_label, fontsize=y_label_fontsize)
-    cax.tick_params(axis="y", labelsize=y_ticks_fontsize)
+    if show_cbar:
+        if cax is None:
+            divider = make_axes_locatable(ax)
+            cax = divider.append_axes("right", size="5%", pad=0.1)
+        cbar = matplotlib.colorbar.ColorbarBase(
+            cax,
+            cmap=cm,
+            norm=norm_color,
+            ticks=y_ticks,
+            orientation="vertical",
+            spacing="proportional",
+            extend=extend_c,
+        )
+        cbar.minorticks_on()
+        if y_tick_labels is not None:
+            cbar.ax.set_yticklabels(y_tick_labels)
+        if y_label is not None:
+            cax.set_ylabel(y_label, fontsize=y_label_fontsize)
+        cax.tick_params(axis="y", labelsize=y_ticks_fontsize)
 
     # region_collection.set_facecolors('r')
     region_collection.set_facecolors(cm(norm_color(data)))

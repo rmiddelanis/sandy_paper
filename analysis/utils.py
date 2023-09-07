@@ -523,6 +523,24 @@ def calc_average_initial_forcing_intensity(_data, _year, _inplace=False):
     if not _inplace:
         return res
 
+
+def write_vars_to_csv(_data, _vars, _clip, _outfile):
+    df = pd.DataFrame(columns=['region', 'sector', 'time'] + _vars)
+    region_col = []
+    sector_col = []
+    time_col = []
+    var_cols = [[]*len(_vars)]
+    for r in _data.get_regions():
+        for s in _data.get_sectors():
+            region_col = region_col + [r] * _clip
+            sector_col = sector_col + [s] * _clip
+            time_col = time_col + list(np.arange(_clip))
+            for var_idx, var in enumerate(_vars):
+                var_cols[var_idx] = var_cols[var_idx] + list(_data.get_vars(var).get_regions(r).get_sectors(s).clip(_clip).get_data().flatten())
+    for name, col in zip(['region', 'sector', 'time'] + _vars, [region_col, sector_col, time_col] + var_cols):
+        df[name] = col
+    df.to_csv(_outfile)
+
 # probably not needed anymore
 # def get_aggregated_var_over_area(_regions, _var, _data):
 #     if isinstance(_data, str):

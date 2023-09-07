@@ -837,7 +837,7 @@ ax.text(ax.get_xlim()[0] + 0.5e6, row, 'Sandy track', ha='left', va='center')
 
 row = row + row_distance
 ax.add_patch(mpl.patches.Rectangle((ax.get_xlim()[0], row - 0.1e6), 0.4e6, 0.2e6, facecolor='gray', edgecolor='none'))
-ax.text(ax.get_xlim()[0] + 0.5e6, row, 'Affected US states (<5%)', va='center')
+ax.text(ax.get_xlim()[0] + 0.5e6, row, 'US states with minor Sandy impact', va='center')
 
 row = row + row_distance
 ax.add_patch(mpl.patches.Rectangle((ax.get_xlim()[0], row - 0.1e6), 0.4e6, 0.2e6, facecolor='white', edgecolor='k', hatch='//////////', linewidth=0.1))
