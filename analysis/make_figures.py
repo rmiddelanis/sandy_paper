@@ -48,7 +48,8 @@ for idx, r in enumerate(['US.NJ', 'US.NY', 'CAN', 'MEX', 'CHN', 'DEU', 'EUR']):
     region_colors[r] = prop_cycle_colors[idx]
 
 
-def plot_consumption_time_series(_data, _clip, _t0=0, _outfile=None, _show=True, _csv_outfile=None):
+def plot_consumption_time_series(_data, _clip, _t0=0, _outfile=None, _show=True, _csv_outfile=None,
+                                 _output_resolution=None):
     scale_factor = 1.0
     fig_width = MAX_FIG_WIDTH_NARROW * scale_factor
     fig_height = 5
@@ -134,7 +135,7 @@ def plot_consumption_time_series(_data, _clip, _t0=0, _outfile=None, _show=True,
     fig.text(center_x_right, xlabel_y, 'days', horizontalalignment='center', verticalalignment='bottom')
     fig.text(0, 0.5, 'changes from baseline [%]', ha='left', va='center', rotation=90)
     if _outfile is not None:
-        fig.savefig(_outfile, dpi=300)
+        fig.savefig(_outfile, dpi=300 if _output_resolution is None else _output_resolution)
     if isinstance(_csv_outfile, str):
         csv_output = csv_output.reset_index().rename({'level_0': 'region', 'level_1': 'day'}, axis=1)
         csv_output.to_csv(_csv_outfile)
@@ -143,7 +144,7 @@ def plot_consumption_time_series(_data, _clip, _t0=0, _outfile=None, _show=True,
 
 
 def plot_consumption_time_series_param_variation(_clip, _t0=0, _outfile=None, _show=True, _t_variation=None,
-                                                 _s_variation=None, _csv_outfile=None):
+                                                 _s_variation=None, _csv_outfile=None, _output_resolution=None):
     if _t_variation is None and _s_variation is not None:
         _t_variation = [60] * len(_s_variation)
         variation = 's'
@@ -212,7 +213,7 @@ def plot_consumption_time_series_param_variation(_clip, _t0=0, _outfile=None, _s
     for idx, ax in enumerate(axs.flatten()[:-(len(axs.flatten()) - len(region_list))]):
         fig.text(0, 1, chr(idx + 97), fontweight='bold', ha='right', va='bottom', transform=ax.transAxes)
     if _outfile is not None:
-        fig.savefig(_outfile, dpi=300)
+        fig.savefig(_outfile, dpi=300 if _output_resolution is None else _output_resolution)
     if isinstance(_csv_outfile, str):
         csv_output = csv_output.reset_index().rename({'level_0': 'region',
                                                       'level_1': 'forcing_duration',
@@ -223,7 +224,8 @@ def plot_consumption_time_series_param_variation(_clip, _t0=0, _outfile=None, _s
         plt.show()
 
 
-def plot_agent_time_series(_data: AggrData, _clip, _t0=0, _outfile=None, _show=True, _csv_outfile=None):
+def plot_agent_time_series(_data: AggrData, _clip, _t0=0, _outfile=None, _show=True, _csv_outfile=None,
+                           _output_resolution=None):
     scale_factor = 0.7
     fig_width = MAX_FIG_WIDTH_WIDE * scale_factor
     fig_height = 6.5
@@ -284,14 +286,14 @@ def plot_agent_time_series(_data: AggrData, _clip, _t0=0, _outfile=None, _show=T
                  horizontalalignment='left', verticalalignment='top', fontweight='bold')
 
     if _outfile is not None:
-        fig.savefig(_outfile, dpi=300)
+        fig.savefig(_outfile, dpi=300 if _output_resolution is None else _output_resolution)
     if isinstance(_csv_outfile, str):
         csv_output_df.to_csv(_csv_outfile)
     if _show:
         plt.show()
 
 
-def plot_schematic_time_series(_outfile=None, _show=True):
+def plot_schematic_time_series(_outfile=None, _show=True, _output_resolution=None):
     _t0 = 4
     _data = pickle.load(open("../data/acclimate_output/sandy_data_first_draft__data.pk", "rb"))
     scale_factor = 1.0
@@ -461,14 +463,14 @@ def plot_schematic_time_series(_outfile=None, _show=True):
     center_x = axs[-1].get_position().x0 + axs[0].get_position().width / 2
     fig.text(center_x, 0, 'time', horizontalalignment='center', verticalalignment='bottom')
     if _outfile is not None:
-        fig.savefig(_outfile, dpi=300)
+        fig.savefig(_outfile, dpi=300 if _output_resolution is None else _output_resolution)
     if _show:
         plt.show()
 
 
 def plot_consumption_deviation_map(_data, _clip, _t0, _outfile=None, _excluded_countries=None, _only_usa=False,
                                    _numbering=None, _csv_outfile=None, _var='consumption_deviation', _show_cbar=True,
-                                   _v_limits=None):
+                                   _v_limits=None, _output_resolution=None):
     scale_factor = 0.75
     var_labels = {
         'consumption_deviation': 'Consumption change (%)',
@@ -584,14 +586,15 @@ def plot_consumption_deviation_map(_data, _clip, _t0, _outfile=None, _excluded_c
             x_pos = 0.05
         fig.text(x_pos, 1, _numbering, fontweight='bold', ha='left', va='top', fontsize=FSIZE_TINY)
     if isinstance(_outfile, str):
-        fig.savefig(_outfile, dpi=300)
+        fig.savefig(_outfile, dpi=300 if _output_resolution is None else _output_resolution)
     if isinstance(_csv_outfile, str):
         df_reduced.sort_values(by='region').to_csv(_csv_outfile)
     plt.show(block=False)
     return df
 
 
-def make_import_dependency_figure_for_paper(_data: AggrData, _clip=None, _t0=None, _outfile=None):
+def make_import_dependency_figure_for_paper(_data: AggrData, _clip=None, _t0=None, _outfile=None,
+                                            _output_resolution=None):
     scale_factor = 0.8
 
     regions_to = ['MEX', 'CAN', 'EUR', 'CHN']
@@ -656,7 +659,7 @@ def make_import_dependency_figure_for_paper(_data: AggrData, _clip=None, _t0=Non
                  horizontalalignment='right',
                  verticalalignment='top', fontweight='bold')
     if isinstance(_outfile, str):
-        fig.savefig(_outfile, dpi=300)
+        fig.savefig(_outfile, dpi=300 if _output_resolution is None else _output_resolution)
     plt.show()
 
 
@@ -666,7 +669,8 @@ def plot_import_dependency_scatter(_data: AggrData, _clip=None, _t_0=0, x_var='e
                                    _acclimate_sector='FCON', _regression=False, _residualsplot=False, _outfile=None,
                                    _numbering=None, _show_xlabel=True, _show_ylabel=True, _show_xticklabels=True,
                                    _excluded_countries=None, _legend=False, _show=True, _xlim=None, _ylim=None,
-                                   _s_offset=None, _s_scale=None, _csv_outfile=None):
+                                   _s_offset=None, _s_scale=None, _csv_outfile=None, _output_resolution=None,
+                                   print_lims=False):
     var_data = _data.get_vars(_acclimate_var).get_sectors(_acclimate_sector)
     if _excluded_countries is not None:
         var_data = var_data.get_regions(list(set(var_data.get_regions()) - set(_excluded_countries)))
@@ -813,9 +817,11 @@ def plot_import_dependency_scatter(_data: AggrData, _clip=None, _t_0=0, x_var='e
         fig.text(0 if _show_ylabel else 0.04, 1, _numbering, ha='left', va='top', transform=transform,
                  fontweight='bold')
     if _outfile is not None:
-        fig.savefig(_outfile, dpi=300)
+        fig.savefig(_outfile, dpi=300 if _output_resolution is None else _output_resolution)
     if isinstance(_csv_outfile, str):
         plot_data[[x_var, y_var, z_var]].to_csv(_csv_outfile)
+    if print_lims:
+        print(ax.get_xlim(), ax.get_ylim())
     if _show:
         plt.show()
     if _residualsplot and _regression:
@@ -847,20 +853,22 @@ if __name__ == '__main__':
         filepath = "../data/acclimate_output/2021_05_21_bi_variation/bi_t{}_s1.0/bi_t{}_s1.0__data.pk".format(t, t)
         outpath = "../figures/consumption_scatter_t_variation/consumption_scatter_t{}.pdf".format(t)
         d = pickle.load(open(filepath, 'rb'))
-        data = plot_import_dependency_scatter(d, _clip=105, _t_0=5, x_var='us_trade_volume',
-                                              y_var='absolute_difference',
-                                              z_var='relative_loss', _x_scale='log', _y_scale='log',
-                                              _acclimate_var='consumption', _acclimate_sector='FCON', _regression=True,
-                                              _residualsplot=False, _excluded_countries=['BLR', 'SDS', 'SDN', 'MDA'],
-                                              _outfile=outpath,
-                                              _numbering=numbering,
-                                              _show_xlabel=numbering in ['c', 'd'],
-                                              _show_xticklabels=numbering in ['c', 'd'],
-                                              _show_ylabel=numbering in ['a', 'c'],
-                                              _legend=numbering == 'd',
-                                              _s_offset=0.0001,
-                                              _s_scale=8000,
-                                              _csv_outfile="../data/publication_data/fig4{}.csv".format(numbering))
+        plot_import_dependency_scatter(
+            d, _clip=105, _t_0=5, x_var='us_trade_volume',
+            y_var='absolute_difference',
+            z_var='relative_loss', _x_scale='log', _y_scale='log',
+            _acclimate_var='consumption', _acclimate_sector='FCON', _regression=True,
+            _residualsplot=False, _excluded_countries=['BLR', 'SDS', 'SDN', 'MDA'],
+            _outfile=outpath,
+            _numbering=numbering,
+            _show_xlabel=numbering in ['c', 'd'],
+            _show_xticklabels=numbering in ['c', 'd'],
+            _show_ylabel=numbering in ['a', 'c'],
+            _legend=numbering == 'd',
+            _s_offset=0.0001,
+            _s_scale=8000,
+            _csv_outfile="../data/publication_data/fig4{}.csv".format(numbering)
+        )
 
     plot_import_dependency_scatter(data, _clip=105, _t_0=5, x_var='import_from_US', y_var='difference',
                                    z_var='relative_loss', _x_scale='linear', _y_scale='linear', _acclimate_var='consumption',
@@ -886,7 +894,6 @@ if __name__ == '__main__':
                                    _excluded_countries=['BLR', 'SDS', 'SDN', 'MDA'], _numbering='d',
                                    _outfile="../figures/consumption_scatter_4.pdf", _legend=True,
                                    _csv_outfile="../data/publication_data/supfig2d.csv")
-
 
     for t, numbering in zip([60, 80, 100, 120], ['b', 'd', 'f', 'h']):
         filepath = "../data/acclimate_output/2021_05_21_bi_variation/bi_t{}_s1.0/bi_t{}_s1.0__data.pk".format(t, t)
