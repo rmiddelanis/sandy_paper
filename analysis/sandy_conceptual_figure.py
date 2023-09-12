@@ -258,147 +258,38 @@ def get_projection(projectionstr):
     )  # e.g. proj=eqc, proj=cea, http://geotiff.maptools.org/proj_list/
 
 
-def fill_axis(_ax, _inset=True):
-    _ax.add_collection(PatchCollection(
-        world_region_patches,
-        edgecolors="white",
-        facecolors=world_region_colors,
-        # linewidths=0.2,
-        linewidths=world_region_linewidths,
-        rasterized=True,
-    ))
-    # ax.add_collection(PatchCollection(usa_rest_patches, facecolor='lightgray'))
-    # ax.add_collection(PatchCollection(can_mex_patches, facecolor='lightgray'))
-    _ax.add_collection(PatchCollection(usa_affected_patches, edgecolors='white', linewidths=0.15,
-                                       facecolors='gray'))
-    _ax.add_collection(PatchCollection(usa_nj_ny_patches, edgecolors='k', linewidths=0.3,
-                                       facecolors=usa_nj_ny_fc))
-    if _inset:
-        _ax.add_collection(
-            PatchCollection(affected_counties_patches, hatch='//////////', facecolors='None', edgecolors='k',
-                            linewidths=0.1))
-    # _ax.add_collection(
-    #     PatchCollection(usa_affected_patches, facecolor='None', edgecolors=usa_affected_patches_ec, linewidths=usa_affected_patches_lw))
-    _ax.plot(sandy_x, sandy_y, linestyle='dotted', color='k')
-
-
-translation_projection = get_projection('robin')
-world_projection = get_projection(world_projectionstr)
-projection = get_projection(
-    "aea +lat_1=29.5 +lat_2=45.5 +lat_0=37.5 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs"
-)
-
-eur_offset_x, eur_offset_y = -1.4e6, 1.0e6
-chn_offset_x, chn_offset_y = -9.5e6, -1.9e6
-can_offset_x, can_offset_y = 0, 2e4
-mex_offset_x, mex_offset_y = 0, -2e4
-world_region_patches = []
-world_region_colors = []
-world_region_linewidths = []
-for n, (_, _, p) in zip(world_patchespickle["patches"].keys(), world_patchespickle['patches'].values()):
-    print('{}'.format(n))
-    for r in world_regions.keys():
-        if n in world_regions[r]:
-            if r == "EUR":
-                p.set_transform(Affine2D.from_values(1, 0, 0, 1, eur_offset_x, eur_offset_y))
-            elif r == "CHN":
-                p.set_transform(Affine2D.from_values(1, 0, 0, 1, chn_offset_x, chn_offset_y))
-            # elif r == "MEX":
-            #     p.set_transform(Affine2D.from_values(1, 0, 0, 1, mex_offset_x, mex_offset_y))
-            # elif r == "CAN":
-            #     p.set_transform(Affine2D.from_values(1, 0, 0, 1, can_offset_x, can_offset_y))
-            world_region_patches.append(p)
-            world_region_colors.append('lightgray')
-            if n not in ['CAN', 'MEX']:
-                world_region_linewidths.append(0.15)
-            else:
-                world_region_linewidths.append(1)
-
-us_projection_offset_lon = -96
-us_projection_offset_lat = 37.5
-
-affected_states = list(billion_dollar_damage_ranges.keys())
-# affected_states = ['US.NJ', 'US.NY']
-
-can_mex_patches = [rec[2] for rec in pickle.load(gzip.GzipFile(can_mex_patchespicklefile, "rb"))['patches'].values()]
-
-usa_affected_patches = []
-usa_rest_patches = []
-usa_nj_ny_patches = []
-usa_nj_ny_fc = []
-for rec in pickle.load(gzip.GzipFile(us_state_patchespicklefile, "rb"))['patches'].values():
-    state_name = list(rec[1])[0]
-    patch = rec[2]
-    if state_name == 'US.AK':
-        patch.set_transform(patch.get_transform() + mpl.transforms.Affine2D().scale(
-            0.4) + mpl.transforms.ScaledTranslation(transform(translation_projection, Point(-25, 0)).x,
-                                                    transform(translation_projection, Point(0, -14)).y,
-                                                    patch.get_transform()))  #
-    elif state_name == 'US.HI':
-        patch.set_transform(
-            patch.get_transform() + mpl.transforms.ScaledTranslation(
-                transform(translation_projection, Point(-15, 0)).x,
-                transform(translation_projection, Point(0, -18)).y,
-                patch.get_transform()))
-    if state_name in affected_states:
-        if state_name in us_state_colors:
-            usa_nj_ny_fc.append(us_state_colors[state_name])
-            usa_nj_ny_patches.append(patch)
-        else:
-            # usa_affected_patches_fc.append('gray')
-            # usa_affected_patches_ec.append('white')
-            # usa_affected_patches_lw.append(0.15)
-            usa_affected_patches.append(patch)
-    else:
-        usa_rest_patches.append(patch)
-
-affected_counties_patches = [rec[2] for rec in
-                             pickle.load(gzip.GzipFile(affected_counties_patchespicklefile, "rb"))['patches'].values()]
-
-sf = shapefile.Reader("../data/external/maps/IBTrACS.NA.list.v04r00.points/IBTrACS.NA.list.v04r00.points.shp")
-sandy_shape_trafo = []
-sandy_shape = []
-for shaperec in sf.iterShapeRecords():
-    rec = shaperec.record
-    if rec[0] == '2012296N14283':
-        coords = shaperec.shape.__geo_interface__['coordinates']
-        # point = Point(coords[0] - us_projection_offset_lon, coords[1] - us_projection_offset_lat)
-        point = Point(coords[0], coords[1])
-        sandy_shape.append(point)
-        sandy_shape_trafo.append(transform(world_projection, point))
-sandy_x = [point.x for point in sandy_shape_trafo]
-sandy_y = [point.y for point in sandy_shape_trafo]
-sandy_track = interp1d(sandy_x, sandy_y)
-
-fig, ax = plt.subplots(figsize=(MAX_FIG_WIDTH_WIDE, MAX_FIG_WIDTH_WIDE * 0.56))
-fill_axis(ax, _inset=False)
-xmin, xmax, ymin, ymax = -1.3e7, 2e6, 0.0e6, 8.4e6
-# ax.set_yticks([])
-# ax.set_xticks([])
-ax.axis('off')
-ax.set_xlim(xmin, xmax)
-ax.set_ylim(ymin, ymax)
-
-inset_scale = 4
-axins = zoomed_inset_axes(ax, inset_scale, loc='upper left', borderpad=0)
-fill_axis(axins)
-axins.set_facecolor('w')
-inset_x1, inset_x2, inset_y1, inset_y2 = -6.9e6, -6e6, 3.9e6, 4.85e6
-axins.set_xlim(inset_x1, inset_x2)
-axins.set_ylim(inset_y1, inset_y2)
-axins.set_xticks([])
-axins.set_yticks([])
-# axins.axis('off')
-# ax.indicate_inset_zoom(axins)
-ax.add_patch(mpl.patches.Rectangle(
-    (inset_x1, inset_y1),
-    inset_x2 - inset_x1,
-    inset_y2 - inset_y1,
-    facecolor='None',
-    edgecolor='k',
-    linewidth=0.5))
-ax.add_artist(ConnectionPatch((0, 0), (inset_x1, inset_y1), 'axes fraction', 'data', axins, ax, linewidth=0.5))
-ax.add_artist(ConnectionPatch((1, 1), (inset_x2, inset_y2), 'axes fraction', 'data', axins, ax, linewidth=0.5))
+def fill_axis(_ax, region_scope, _inset=True):
+    if region_scope in ['USA', 'BOTH']:
+        _ax.add_collection(PatchCollection(
+            usa_patches,
+            edgecolors="white",
+            facecolors='lightgrey',
+            linewidths=0.1,
+            # linewidths=world_region_linewidths,
+            rasterized=True,
+        ))
+        # ax.add_collection(PatchCollection(usa_rest_patches, facecolor='lightgray'))
+        # ax.add_collection(PatchCollection(can_mex_patches, facecolor='lightgray'))
+        _ax.add_collection(PatchCollection(usa_affected_patches, edgecolors='white', linewidths=0.15,
+                                           facecolors='gray'))
+        _ax.add_collection(PatchCollection(usa_nj_ny_patches, edgecolors='k', linewidths=0.3,
+                                           facecolors=usa_nj_ny_fc))
+        if _inset:
+            _ax.add_collection(
+                PatchCollection(affected_counties_patches, hatch='//////////', facecolors='None', edgecolors='k',
+                                linewidths=0.1))
+        # _ax.add_collection(
+        #     PatchCollection(usa_affected_patches, facecolor='None', edgecolors=usa_affected_patches_ec, linewidths=usa_affected_patches_lw))
+        _ax.plot(sandy_x, sandy_y, linestyle='dotted', color='k')
+    elif region_scope in ['OTHER', 'BOTH']:
+        _ax.add_collection(PatchCollection(
+            world_region_patches,
+            edgecolors="white",
+            facecolors='lightgrey',
+            linewidths=0.1,
+            # linewidths=world_region_linewidths,
+            rasterized=True,
+        ))
 
 
 class PPoint:
@@ -617,8 +508,101 @@ def wedge_to(fr, to, radius, param1=True, param2=False):
 def sgn(a):
     return -1 if a < 0 else 1
 
+translation_projection = get_projection('robin')
+world_projection = get_projection(world_projectionstr)
+projection = get_projection(
+    "aea +lat_1=29.5 +lat_2=45.5 +lat_0=37.5 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs"
+)
 
-max_radius = 1e5  # 7e5
+eur_offset_x, eur_offset_y = -1.4e6, 1.0e6
+chn_offset_x, chn_offset_y = -9.5e6, -1.9e6
+can_offset_x, can_offset_y = 0, 2e4
+mex_offset_x, mex_offset_y = 0, -2e4
+world_region_patches = []
+usa_patches = []
+world_region_linewidths = []
+for n, (_, _, p) in zip(world_patchespickle["patches"].keys(), world_patchespickle['patches'].values()):
+    print('{}'.format(n))
+    for r in world_regions.keys():
+        if n in world_regions[r]:
+            if r == "EUR":
+                p.set_transform(Affine2D.from_values(1, 0, 0, 1, eur_offset_x, eur_offset_y))
+            elif r == "CHN":
+                p.set_transform(Affine2D.from_values(1, 0, 0, 1, chn_offset_x, chn_offset_y))
+            # elif r == "MEX":
+            #     p.set_transform(Affine2D.from_values(1, 0, 0, 1, mex_offset_x, mex_offset_y))
+            # elif r == "CAN":
+            #     p.set_transform(Affine2D.from_values(1, 0, 0, 1, can_offset_x, can_offset_y))
+            if r != 'USA':
+                world_region_patches.append(p)
+            else:
+                usa_patches.append(p)
+
+us_projection_offset_lon = -96
+us_projection_offset_lat = 37.5
+
+affected_states = list(billion_dollar_damage_ranges.keys())
+# affected_states = ['US.NJ', 'US.NY']
+
+can_mex_patches = [rec[2] for rec in pickle.load(gzip.GzipFile(can_mex_patchespicklefile, "rb"))['patches'].values()]
+
+usa_affected_patches = []
+usa_rest_patches = []
+usa_nj_ny_patches = []
+usa_nj_ny_fc = []
+for rec in pickle.load(gzip.GzipFile(us_state_patchespicklefile, "rb"))['patches'].values():
+    state_name = list(rec[1])[0]
+    patch = rec[2]
+    if state_name == 'US.AK':
+        patch.set_transform(patch.get_transform() + mpl.transforms.Affine2D().scale(
+            0.4) + mpl.transforms.ScaledTranslation(transform(translation_projection, Point(-25, 0)).x,
+                                                    transform(translation_projection, Point(0, -14)).y,
+                                                    patch.get_transform()))  #
+    elif state_name == 'US.HI':
+        patch.set_transform(
+            patch.get_transform() + mpl.transforms.ScaledTranslation(
+                transform(translation_projection, Point(-15, 0)).x,
+                transform(translation_projection, Point(0, -18)).y,
+                patch.get_transform()))
+    if state_name in affected_states:
+        if state_name in us_state_colors:
+            usa_nj_ny_fc.append(us_state_colors[state_name])
+            usa_nj_ny_patches.append(patch)
+        else:
+            # usa_affected_patches_fc.append('gray')
+            # usa_affected_patches_ec.append('white')
+            # usa_affected_patches_lw.append(0.15)
+            usa_affected_patches.append(patch)
+    else:
+        usa_rest_patches.append(patch)
+
+affected_counties_patches = [rec[2] for rec in
+                             pickle.load(gzip.GzipFile(affected_counties_patchespicklefile, "rb"))['patches'].values()]
+
+sf = shapefile.Reader("../data/external/maps/IBTrACS.NA.list.v04r00.points/IBTrACS.NA.list.v04r00.points.shp")
+sandy_shape_trafo = []
+sandy_shape = []
+for shaperec in sf.iterShapeRecords():
+    rec = shaperec.record
+    if rec[0] == '2012296N14283':
+        coords = shaperec.shape.__geo_interface__['coordinates']
+        # point = Point(coords[0] - us_projection_offset_lon, coords[1] - us_projection_offset_lat)
+        point = Point(coords[0], coords[1])
+        sandy_shape.append(point)
+        sandy_shape_trafo.append(transform(world_projection, point))
+sandy_x = [point.x for point in sandy_shape_trafo]
+sandy_y = [point.y for point in sandy_shape_trafo]
+sandy_track = interp1d(sandy_x, sandy_y)
+
+fig, ax = plt.subplots(figsize=(MAX_FIG_WIDTH_WIDE, MAX_FIG_WIDTH_WIDE * 0.56))
+inset_x1, inset_x2, inset_y1, inset_y2 = -6.9e6, -6e6, 3.9e6, 4.85e6
+fill_axis(ax, _inset=False, region_scope='USA')
+xmin, xmax, ymin, ymax = -1.3e7, 2e6, 0.0e6, 8.4e6
+# ax.set_yticks([])
+# ax.set_xticks([])
+ax.axis('off')
+ax.set_xlim(xmin, xmax)
+ax.set_ylim(ymin, ymax)
 
 reg_coords = {
     'USA-OTH': (-100, 39),
@@ -643,6 +627,51 @@ for region in list(reg_coords.keys()):
         x += eur_offset_x
         y += eur_offset_y
     reg_coords[region] = (x, y)
+
+reg_la = {
+    'CHN': {
+        'h': 'left',
+        'v': 'center',
+    },
+    'EUR': {
+        'h': 'left',
+        'v': 'center',
+    },
+    'MEX': {
+        'h': 'right',
+        'v': 'top',
+    },
+    'USA-OTH': {
+        'h': 'center',
+        'v': 'center',
+    },
+    'USA': {
+        'h': 'center',
+        'v': 'center',
+    },
+    'CAN': {
+        'h': 'right',
+        'v': 'bottom',
+    },
+}
+for label in ['USA']:
+# for label in ['CHN']:
+    ax.annotate(label, (reg_coords[label][0], reg_coords[label][1]), ha=reg_la[label]['h'], va=reg_la[label]['v'], fontsize=FSIZE_SMALL)
+
+# save first layer of the figure
+plt.tight_layout()
+fig.savefig("/home/robin/Documents/01_Uni Potsdam/Promotion/03_Disputation_vortrag/graphics/paper_figures/sandy_paper/png/fig1_disassembled/layer1.png",
+            transparent=True, dpi=1200)
+
+fill_axis(ax, _inset=False, region_scope='OTHER')
+for label in ['EUR', 'CHN', 'MEX', 'CAN']:
+# for label in ['CHN']:
+    ax.annotate(label, (reg_coords[label][0], reg_coords[label][1]), ha=reg_la[label]['h'], va=reg_la[label]['v'], fontsize=FSIZE_SMALL)
+
+# save second layer of the figure
+plt.tight_layout()
+fig.savefig("/home/robin/Documents/01_Uni Potsdam/Promotion/03_Disputation_vortrag/graphics/paper_figures/sandy_paper/png/fig1_disassembled/layer2.png",
+            transparent=True, dpi=1200)
 
 trade_flows = pd.read_csv("../data/generated/us_trade_flows_for_concept_figure.csv")
 trade_flows = trade_flows[(trade_flows['region_from'].isin(list(reg_coords.keys()))) & (trade_flows['region_to'].isin(list(reg_coords.keys())))]
@@ -752,42 +781,11 @@ arrows = [
     ('US.NY', trade_flows.loc[('US.NY', 'MEX'), 'eora'], PPoint(*move_point(inset_anchor_pts['ll_1'], get_orthogonal(reg_anchor_pts['MEX_1'], inset_anchor_pts['ll_1']), 5e4)), PPoint(*move_point(reg_anchor_pts['MEX_1'], get_orthogonal(reg_anchor_pts['MEX_1'], inset_anchor_pts['ll_1']), +5e4)), get_arc_y(inset_anchor_pts['ll_1'], reg_anchor_pts['MEX_1'])[1] - 5e4),
     ('US.NJ', trade_flows.loc[('MEX', 'US.NJ'), 'eora'], PPoint(*move_point(reg_anchor_pts['MEX_0'], get_orthogonal(reg_anchor_pts['MEX_0'], inset_anchor_pts['ll_0']), -5e4)), PPoint(*move_point(inset_anchor_pts['ll_0'], get_orthogonal(reg_anchor_pts['MEX_0'], inset_anchor_pts['ll_0']), -5e4)), get_arc_y(inset_anchor_pts['ll_0'], reg_anchor_pts['MEX_0'])[0] + 5e4),
     ('US.NJ', trade_flows.loc[('US.NJ', 'MEX'), 'eora'], PPoint(*move_point(inset_anchor_pts['ll_0'], get_orthogonal(reg_anchor_pts['MEX_0'], inset_anchor_pts['ll_0']), 5e4)), PPoint(*move_point(reg_anchor_pts['MEX_0'], get_orthogonal(reg_anchor_pts['MEX_0'], inset_anchor_pts['ll_0']), +5e4)), get_arc_y(inset_anchor_pts['ll_0'], reg_anchor_pts['MEX_0'])[0] - 5e4),
-
 ]
 
 norm = Normalize(vmin=0, vmax=trade_flows['eora'].max())
 
-
-reg_la = {
-    'CHN': {
-        'h': 'left',
-        'v': 'center',
-    },
-    'EUR': {
-        'h': 'left',
-        'v': 'center',
-    },
-    'MEX': {
-        'h': 'right',
-        'v': 'top',
-    },
-    'USA-OTH': {
-        'h': 'center',
-        'v': 'center',
-    },
-    'USA': {
-        'h': 'center',
-        'v': 'center',
-    },
-    'CAN': {
-        'h': 'right',
-        'v': 'bottom',
-    },
-}
-for label in ['USA', 'EUR', 'CHN', 'MEX', 'CAN']:
-# for label in ['CHN']:
-    ax.annotate(label, (reg_coords[label][0], reg_coords[label][1]), ha=reg_la[label]['h'], va=reg_la[label]['v'], fontsize=FSIZE_SMALL)
-
+max_radius = 1e5  # 7e5
 for a in arrows:
     d1 = a[1]
     corrx = [0, 0]
@@ -808,6 +806,39 @@ for a in arrows:
             ec='none'
         )
     )
+
+# save second layer of the figure
+plt.tight_layout()
+fig.savefig("/home/robin/Documents/01_Uni Potsdam/Promotion/03_Disputation_vortrag/graphics/paper_figures/sandy_paper/png/fig1_disassembled/layer3.png",
+            transparent=True, dpi=1200)
+
+
+# inset axis
+inset_scale = 4
+axins = zoomed_inset_axes(ax, inset_scale, loc='upper left', borderpad=0)
+fill_axis(axins, region_scope='BOTH')
+axins.set_facecolor('w')
+axins.set_xlim(inset_x1, inset_x2)
+axins.set_ylim(inset_y1, inset_y2)
+axins.set_xticks([])
+axins.set_yticks([])
+# axins.axis('off')
+# ax.indicate_inset_zoom(axins)
+ax.add_patch(mpl.patches.Rectangle(
+    (inset_x1, inset_y1),
+    inset_x2 - inset_x1,
+    inset_y2 - inset_y1,
+    facecolor='None',
+    edgecolor='k',
+    linewidth=0.5))
+ax.add_artist(ConnectionPatch((0, 0), (inset_x1, inset_y1), 'axes fraction', 'data', axins, ax, linewidth=0.5))
+ax.add_artist(ConnectionPatch((1, 1), (inset_x2, inset_y2), 'axes fraction', 'data', axins, ax, linewidth=0.5))
+
+# save third layer of the figure
+plt.tight_layout()
+fig.savefig("/home/robin/Documents/01_Uni Potsdam/Promotion/03_Disputation_vortrag/graphics/paper_figures/sandy_paper/png/fig1_disassembled/layer4.png",
+            transparent=True, dpi=1200)
+
 
 row_distance = 0.35e6
 
@@ -852,6 +883,9 @@ ax.add_patch(mpl.patches.Rectangle((ax.get_xlim()[0], row - 0.1e6), 0.4e6, 0.2e6
 ax.text(ax.get_xlim()[0] + 0.5e6, row, 'NJ', va='center')
 
 # ax.axis('scaled')
+# plt.tight_layout()
+# save fourth layer of the figure
 plt.tight_layout()
-fig.savefig("../figures/conceptual_fig_wo_USA-OTH.pdf", dpi=300)
+fig.savefig("/home/robin/Documents/01_Uni Potsdam/Promotion/03_Disputation_vortrag/graphics/paper_figures/sandy_paper/png/fig1_disassembled/layer5.png",
+            transparent=True, dpi=1200)
 plt.show()
