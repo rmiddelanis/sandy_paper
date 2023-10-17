@@ -56,6 +56,7 @@ def plot_consumption_time_series(_data, _clip, _t0=0, _outfile=None, _show=True,
     us_states_linewidth = 0.5
     regions_linewidth = 1
     fig, axs = plt.subplots(3, 2, sharex=False, sharey=False, figsize=(fig_width, fig_height))
+    fig.set_facecolor('none')
     for ax in axs.flatten():
         ax.axhline(y=0, color='k', linestyle='--', linewidth=1)
     us_state_list = [r for r in _data.get_regions() if r[:3] == 'US.' and r not in ['US.NJ', 'US.NY']]
@@ -159,6 +160,7 @@ def plot_consumption_time_series_param_variation(_clip, _t0=0, _outfile=None, _s
     regions_linewidth = 1
     region_list = ['US.NJ', 'US.NY', 'MEX', 'CAN', 'EUR', 'DEU', 'CHN']
     fig, axs = plt.subplots(4, 2, sharex=False, sharey=False, figsize=(fig_width, fig_height))
+    fig.set_facecolor('none')
     for idx, ax in enumerate(axs.flatten()[:-(len(axs.flatten()) - len(region_list))]):
         ax.axhline(y=0, color='k', linestyle='--', linewidth=1)
     var = 'consumption'
@@ -249,6 +251,7 @@ def plot_agent_time_series(_data: AggrData, _clip, _t0=0, _outfile=None, _show=T
     _data.calc_demand_exceedence(_inplace=True)
 
     fig, axs = plt.subplots(3, 1, sharex=True, sharey=False, figsize=(fig_width, fig_height))
+    fig.set_facecolor('none')
     for ax_idx, ax in enumerate(axs):
         ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
         ax.axhline(y=0, linewidth=1, color='k', linestyle='--')
@@ -355,6 +358,7 @@ def plot_schematic_time_series(_outfile=None, _show=True, _output_resolution=Non
         'forcing': None,
     }
     fig, axs = plt.subplots(4, 1, sharex=True, sharey=False, figsize=(fig_width, fig_height))
+    fig.set_facecolor('none')
     for ax_idx, ax in enumerate(axs):
         ax.axhline(y=0 if ax_idx > 0 else 1, color='k', linestyle='--', linewidth=1)
         var = variables[ax_idx]
@@ -586,7 +590,7 @@ def plot_consumption_deviation_map(_data, _clip, _t0, _outfile=None, _excluded_c
             x_pos = 0.05
         fig.text(x_pos, 1, _numbering, fontweight='bold', ha='left', va='top', fontsize=FSIZE_TINY)
     if isinstance(_outfile, str):
-        fig.savefig(_outfile, dpi=300 if _output_resolution is None else _output_resolution)
+        fig.savefig(_outfile, dpi=300 if _output_resolution is None else _output_resolution, transparent=True)
     if isinstance(_csv_outfile, str):
         df_reduced.sort_values(by='region').to_csv(_csv_outfile)
     plt.show(block=False)
@@ -600,6 +604,7 @@ def make_import_dependency_figure_for_paper(_data: AggrData, _clip=None, _t0=Non
     regions_to = ['MEX', 'CAN', 'EUR', 'CHN']
 
     fig, axs = plt.subplots(1, 2, figsize=(MAX_FIG_WIDTH_WIDE * scale_factor, 2.5), sharex=True)
+    fig.set_facecolor('none')
 
     if _clip is not None:
         _data = _data.clip(_clip)
@@ -755,6 +760,7 @@ def plot_import_dependency_scatter(_data: AggrData, _clip=None, _t_0=0, x_var='e
     x_0, y_0, = 1 - ax_width, 1 - ax_height
     figsize = (fig_width, fig_height)
     fig, ax = plt.subplots(1, 1, figsize=figsize)
+    fig.set_facecolor('none')
     ax.set_position([x_0, y_0, ax_width, ax_height])
     ax.set_yscale(_y_scale)
     ax.set_xscale(_x_scale)
@@ -837,21 +843,21 @@ if __name__ == '__main__':
     data.calc_eff_forcing(_inplace=True)
     data.calc_demand_exceedence(_inplace=True)
     data.calc_eff_prod_capacity(_inplace=True)
-    plot_consumption_time_series(data, 134, 4, _outfile="../figures/consumption_plots.pdf",
-                                 _csv_outfile="../data/publication_data/fig3.csv")
-    plot_consumption_deviation_map(data, _clip=105, _t0=5, _numbering='a', _excluded_countries=['BLR', 'SDS', 'SDN', 'MDA'],
-                                   _outfile="../figures/choropleth_consumption_deviation_WORLD.pdf",
-                                   _csv_outfile="../data/publication_data/fig2a.csv")
-    plot_consumption_deviation_map(data, _clip=105, _t0=5, _only_usa=True, _numbering='b', _excluded_countries=['BLR', 'SDS', 'SDN', 'MDA'],
-                                   _outfile="../figures/choropleth_consumption_deviation_USA.pdf",
-                                   _csv_outfile="../data/publication_data/fig2b.csv")
-    plot_schematic_time_series(_outfile="../figures/time_series_schematic.pdf", _show=True)
-    plot_agent_time_series(data, _clip=85, _t0=4, _outfile="../figures/time_series_NJ_NY_US-49.pdf",
-                           _csv_outfile="../data/publication_data/fig5.csv")
+    plot_consumption_time_series(data, 134, 4, _output_resolution=800,
+                                 _outfile="/home/robin/Documents/01_Uni Potsdam/Promotion/03_Disputation_vortrag/graphics/paper_figures/sandy_paper/png/fig3.png")
+    plot_consumption_deviation_map(data, _clip=105, _t0=5, _numbering='a', _output_resolution=800,
+                                   _excluded_countries=['BLR', 'SDS', 'SDN', 'MDA'],
+                                   _outfile="/home/robin/Documents/01_Uni Potsdam/Promotion/03_Disputation_vortrag/graphics/paper_figures/sandy_paper/png/fig2a.png")
+    plot_consumption_deviation_map(data, _clip=105, _t0=5, _only_usa=True, _numbering='b', _output_resolution=800,
+                                   _excluded_countries=['BLR', 'SDS', 'SDN', 'MDA'],
+                                   _outfile="/home/robin/Documents/01_Uni Potsdam/Promotion/03_Disputation_vortrag/graphics/paper_figures/sandy_paper/png/fig2b.png", )
+    plot_agent_time_series(data, _clip=85, _t0=4, _output_resolution=800,
+                           _outfile="/home/robin/Documents/01_Uni Potsdam/Promotion/03_Disputation_vortrag/graphics/paper_figures/sandy_paper/png/fig5.png", )
 
     for t, numbering in zip([60, 80, 100, 120], ['a', 'b', 'c', 'd']):
-        filepath = "../data/acclimate_output/2021_05_21_bi_variation/bi_t{}_s1.0/bi_t{}_s1.0__data.pk".format(t, t)
-        outpath = "../figures/consumption_scatter_t_variation/consumption_scatter_t{}.pdf".format(t)
+        filepath = "/home/robin/repos/sandy_paper/data/acclimate_output/2021_05_21_bi_variation/bi_t{}_s1.0/bi_t{}_s1.0__data.pk".format(
+            t, t)
+        outpath = f"/home/robin/Documents/01_Uni Potsdam/Promotion/03_Disputation_vortrag/graphics/paper_figures/sandy_paper/png/fig4{numbering}.png"
         d = pickle.load(open(filepath, 'rb'))
         plot_import_dependency_scatter(
             d, _clip=105, _t_0=5, x_var='us_trade_volume',
@@ -860,65 +866,15 @@ if __name__ == '__main__':
             _acclimate_var='consumption', _acclimate_sector='FCON', _regression=True,
             _residualsplot=False, _excluded_countries=['BLR', 'SDS', 'SDN', 'MDA'],
             _outfile=outpath,
-            _numbering=numbering,
-            _show_xlabel=numbering in ['c', 'd'],
-            _show_xticklabels=numbering in ['c', 'd'],
-            _show_ylabel=numbering in ['a', 'c'],
-            _legend=numbering == 'd',
+            _numbering=None,
+            _show_xlabel=True,
+            _show_xticklabels=True,
+            _show_ylabel=True,
+            _legend=True,
             _s_offset=0.0001,
             _s_scale=8000,
-            _csv_outfile="../data/publication_data/fig4{}.csv".format(numbering)
+            _output_resolution=800,
+            _show=False,
+            _xlim=(2556.6028523757313, 1565401274.9517658),
+            _ylim=(66.90243687373501, 1411543110.801006)
         )
-
-    plot_import_dependency_scatter(data, _clip=105, _t_0=5, x_var='import_from_US', y_var='difference',
-                                   z_var='relative_loss', _x_scale='linear', _y_scale='linear', _acclimate_var='consumption',
-                                   _acclimate_sector='FCON', _regression=False, _residualsplot=False,
-                                   _excluded_countries=['BLR', 'SDS', 'SDN', 'MDA'],
-                                   _outfile="../figures/consumption_scatter_1.pdf", _numbering='a',
-                                   _csv_outfile="../data/publication_data/supfig2a.csv")
-    plot_import_dependency_scatter(data, _clip=105, _t_0=5, x_var='export_to_US', y_var='difference',
-                                   z_var='relative_loss', _x_scale='linear', _y_scale='linear', _acclimate_var='consumption',
-                                   _acclimate_sector='FCON', _regression=False, _residualsplot=False, _show_ylabel=False,
-                                   _excluded_countries=['BLR', 'SDS', 'SDN', 'MDA'], _numbering='b',
-                                   _outfile="../figures/consumption_scatter_2.pdf",
-                                   _csv_outfile="../data/publication_data/supfig2b.csv")
-    plot_import_dependency_scatter(data, _clip=105, _t_0=5, x_var='import_from_US', y_var='absolute_difference',
-                                   z_var='relative_loss', _x_scale='log', _y_scale='log', _acclimate_var='consumption',
-                                   _acclimate_sector='FCON', _regression=True, _residualsplot=False,
-                                   _excluded_countries=['BLR', 'SDS', 'SDN', 'MDA'], _numbering='c',
-                                   _outfile="../figures/consumption_scatter_3.pdf",
-                                   _csv_outfile="../data/publication_data/supfig2c.csv")
-    plot_import_dependency_scatter(data, _clip=105, _t_0=5, x_var='export_to_US', y_var='absolute_difference',
-                                   z_var='relative_loss', _x_scale='log', _y_scale='log', _acclimate_var='consumption',
-                                   _acclimate_sector='FCON', _regression=True, _residualsplot=False, _show_ylabel=False,
-                                   _excluded_countries=['BLR', 'SDS', 'SDN', 'MDA'], _numbering='d',
-                                   _outfile="../figures/consumption_scatter_4.pdf", _legend=True,
-                                   _csv_outfile="../data/publication_data/supfig2d.csv")
-
-    for t, numbering in zip([60, 80, 100, 120], ['b', 'd', 'f', 'h']):
-        filepath = "../data/acclimate_output/2021_05_21_bi_variation/bi_t{}_s1.0/bi_t{}_s1.0__data.pk".format(t, t)
-        outpath = "../figures/us_choropleth_t_variation/us_choropleth_t{}.pdf".format(t)
-        d = pickle.load(open(filepath, "rb"))
-        plot_consumption_deviation_map(d, _clip=105, _t0=5, _numbering=numbering,
-                                       _excluded_countries=['BLR', 'SDS', 'SDN', 'MDA'],
-                                       _only_usa=True, _v_limits=(-0.6, 0.1),
-                                       _outfile=outpath,
-                                       _csv_outfile="../data/publication_data/supfig5{}.csv".format(numbering))
-
-    for t, numbering in zip([60, 80, 100, 120], ['a', 'c', 'e', 'g']):
-        filepath = "../data/acclimate_output/2021_05_21_bi_variation/bi_t{}_s1.0/bi_t{}_s1.0__data.pk".format(t, t)
-        outpath = "../figures/world_choropleth_t_variation/world_choropleth_t{}.pdf".format(t)
-        d = pickle.load(open(filepath, "rb"))
-        plot_consumption_deviation_map(d, _clip=105, _t0=5, _numbering=numbering,
-                                       _excluded_countries=['BLR', 'SDS', 'SDN', 'MDA'],
-                                       _only_usa=False, _v_limits=(-0.5, 0.07),
-                                       _outfile=outpath,
-                                       _csv_outfile="../data/publication_data/supfig5{}.csv".format(numbering))
-
-    plot_consumption_time_series_param_variation(_clip=105, _t0=5, _show=False, _t_variation=[60, 80, 100, 120],
-                                                 _outfile="../figures/consumption_plot_t_variation.pdf",
-                                                 _csv_outfile="../data/publication_data/supfig3.csv")
-    plot_consumption_time_series_param_variation(_clip=105, _t0=5, _show=False, _s_variation=[0.9, 1.0, 1.1],
-                                                 _outfile="../figures/consumption_plot_s_variation.pdf",
-                                                 _csv_outfile="../data/publication_data/supfig4.csv")
-    pass
